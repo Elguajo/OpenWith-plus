@@ -137,7 +137,7 @@ private struct ProblemCard: View {
                 VStack(alignment: .leading, spacing: 2) {
                     Text(record.localizedTypeName ?? record.target.value)
                         .font(.headline)
-                    Text(record.target.description)
+                    Text(record.target.displayText)
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }

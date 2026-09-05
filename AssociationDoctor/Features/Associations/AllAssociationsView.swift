@@ -111,7 +111,7 @@ private struct AssociationRow: View {
             AppIconView(app: record.currentApp, size: 24)
             VStack(alignment: .leading, spacing: 2) {
                 Text(record.localizedTypeName ?? record.target.value)
-                Text(showAdvancedUTI ? (record.uti ?? record.target.description) : record.target.description)
+                Text(showAdvancedUTI ? (record.uti ?? record.target.displayText) : record.target.displayText)
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }

@@ -31,6 +31,22 @@ struct StatusBadge: View {
     }
 }
 
+extension Target {
+    /// User-facing label for a target: `.tar` for an extension, the raw
+    /// string for a UTI, `mailto:` for a URL scheme — every screen that
+    /// shows a target under its type name uses this instead of the
+    /// library's own `description` (`"extension:tar"`), which reads like
+    /// debug output, not UI copy.
+    var displayText: String {
+        switch self {
+        case .ext(let ext): return ".\(ext)"
+        case .uti(let uti): return uti
+        case .urlScheme(let scheme): return "\(scheme):"
+        case .file(let path): return path
+        }
+    }
+}
+
 extension RecommendationReason {
     /// Plain-language reason text for Problem cards (§5.4: a suggestion is
     /// never a black box).

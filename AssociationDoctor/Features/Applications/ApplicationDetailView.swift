@@ -72,7 +72,7 @@ private struct ApplicationCapabilityRow: View {
         HStack {
             VStack(alignment: .leading, spacing: 2) {
                 Text(record.localizedTypeName ?? record.target.value)
-                Text(record.target.description)
+                Text(record.target.displayText)
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }
