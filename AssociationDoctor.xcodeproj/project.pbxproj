@@ -13,6 +13,8 @@
 		1FCB0CD7A122586EFEC9DB45 /* ApplicationDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2CBC0EAFDEA3EA8E54F68E5 /* ApplicationDetailView.swift */; };
 		28A1E61A48F78CA90F9B6341 /* ApplicationsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6EB24F8153AACE9B4B615752 /* ApplicationsView.swift */; };
 		2A68B190EE5A1F85690C3396 /* RepairPlan.swift in Sources */ = {isa = PBXBuildFile; fileRef = D2EAB601361E401418839905 /* RepairPlan.swift */; };
+		2B7B12DEA9761D60EDA338CA /* BaselineStoreTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0245EC042B65AC7053036333 /* BaselineStoreTests.swift */; };
+		2C9D798EC2FEC6BBC45E6808 /* BaselineStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 99341BAB225B0188E0B837CB /* BaselineStore.swift */; };
 		352230F64A05A56F5D164DE7 /* FakeWritableLaunchServicesProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 187D8D9B0423EDBEC19575FB /* FakeWritableLaunchServicesProvider.swift */; };
 		35350D1B094AC63C5DAF462B /* DashboardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9DF7A348123B789C01B3737F /* DashboardView.swift */; };
 		3A949F990AA33160DD2F6A0F /* ProfilesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0A2B5D0CD4ED2844184E5D11 /* ProfilesView.swift */; };
@@ -66,6 +68,7 @@
 
 /* Begin PBXFileReference section */
 		00DAD8C4D06517C5B94F52A6 /* AssociationDoctorApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AssociationDoctorApp.swift; sourceTree = "<group>"; };
+		0245EC042B65AC7053036333 /* BaselineStoreTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BaselineStoreTests.swift; sourceTree = "<group>"; };
 		0285D5F1874E1A461B707EA5 /* RepairPlanRunner.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RepairPlanRunner.swift; sourceTree = "<group>"; };
 		05433827DB6BFCA1ABE9FC01 /* HealthScore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HealthScore.swift; sourceTree = "<group>"; };
 		0A2B5D0CD4ED2844184E5D11 /* ProfilesView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProfilesView.swift; sourceTree = "<group>"; };
@@ -96,6 +99,7 @@
 		8458B846D6B95A9840BEAE46 /* RepairPlanSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RepairPlanSheet.swift; sourceTree = "<group>"; };
 		96788974A7F17C3B7230FEB2 /* RecommendationEngineTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecommendationEngineTests.swift; sourceTree = "<group>"; };
 		98C85FCA67D4BE936AD16985 /* FakeAppDeclaredTypesReader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FakeAppDeclaredTypesReader.swift; sourceTree = "<group>"; };
+		99341BAB225B0188E0B837CB /* BaselineStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BaselineStore.swift; sourceTree = "<group>"; };
 		9DF7A348123B789C01B3737F /* DashboardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DashboardView.swift; sourceTree = "<group>"; };
 		9F342E5D66BB81BB563B3533 /* RepairServiceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RepairServiceTests.swift; sourceTree = "<group>"; };
 		B2CBC0EAFDEA3EA8E54F68E5 /* ApplicationDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ApplicationDetailView.swift; sourceTree = "<group>"; };
@@ -182,6 +186,7 @@
 			isa = PBXGroup;
 			children = (
 				E871D4FD88CADC07367CF6B2 /* AssociationScannerTests.swift */,
+				0245EC042B65AC7053036333 /* BaselineStoreTests.swift */,
 				1ECE922F5816D554572149D4 /* DiagnosticEngineTests.swift */,
 				98C85FCA67D4BE936AD16985 /* FakeAppDeclaredTypesReader.swift */,
 				6599FBF324BA9EE3DEE518BE /* FakeLaunchServicesProvider.swift */,
@@ -264,6 +269,7 @@
 		977F2C858D355B2EBB7AB638 /* Persistence */ = {
 			isa = PBXGroup;
 			children = (
+				99341BAB225B0188E0B837CB /* BaselineStore.swift */,
 				6E97A332D7244FBE0F1C64DE /* SettingsStore.swift */,
 			);
 			path = Persistence;
@@ -390,6 +396,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				828B50CF0DFDB7F2FDA6688D /* AssociationScannerTests.swift in Sources */,
+				2B7B12DEA9761D60EDA338CA /* BaselineStoreTests.swift in Sources */,
 				1438387931E4C3CCAC82838C /* DiagnosticEngineTests.swift in Sources */,
 				C78A7729DBE1A66B94B3726F /* FakeAppDeclaredTypesReader.swift in Sources */,
 				0AD56A6F05B05F21830A6FF5 /* FakeLaunchServicesProvider.swift in Sources */,
@@ -419,6 +426,7 @@
 				AACC660061546220398E47B4 /* AssociationScanner.swift in Sources */,
 				70A7D153C5D391A4C5A91B22 /* AssociationStatus.swift in Sources */,
 				43A4E0FE7410A22E1BD87E64 /* Baseline.swift in Sources */,
+				2C9D798EC2FEC6BBC45E6808 /* BaselineStore.swift in Sources */,
 				35350D1B094AC63C5DAF462B /* DashboardView.swift in Sources */,
 				EC6AC089080E10F663582863 /* DiagnosticEngine.swift in Sources */,
 				C09602945E1E2C363EC87B95 /* FileCategory.swift in Sources */,

@@ -35,9 +35,8 @@ enum SidebarSection: String, CaseIterable, Identifiable {
 }
 
 /// App-wide state: the current scan, navigation selection, and settings.
-/// Owns the scan → diagnose pipeline and the single-item repair action;
-/// the batch Repair Plan / Baseline persistence this will eventually
-/// coordinate with are Phase 7/8.
+/// Owns the scan → diagnose pipeline (baseline-aware since Phase 8), the
+/// single-item repair action, and the saved `Baseline` itself.
 @MainActor
 final class AppState: ObservableObject {
     @Published private(set) var records: [AssociationRecord] = []
@@ -50,6 +49,11 @@ final class AppState: ObservableObject {
     // until the user clicked something.
     @Published var selectedSection: SidebarSection? = .dashboard
     @Published var settings = SettingsStore()
+    /// The saved baseline, if any (§13/§14) — loaded once at launch and
+    /// kept in sync with `baselineStore` by every save. `scan()` feeds it to
+    /// `DiagnosticEngine`/`RecommendationEngine` so `.changed` and
+    /// `matchesBaseline` go live the moment one exists.
+    @Published private(set) var baseline: Baseline?
 
     /// record id → the current app's bundle ID *at the time it was
     /// ignored* (§23). Session-only for now — persisting `IgnoredFinding`
@@ -59,6 +63,12 @@ final class AppState: ObservableObject {
 
     private let engine = Engine.live()
     private lazy var repairService = RepairService(engine: engine)
+    private let baselineStore: BaselineStore
+
+    init(baselineStore: BaselineStore = BaselineStore()) {
+        self.baselineStore = baselineStore
+        self.baseline = baselineStore.load()
+    }
 
     /// What the UI should actually render: the ignore overlay applied,
     /// and URL schemes dropped when the corresponding setting is off.
@@ -117,6 +127,7 @@ final class AppState: ObservableObject {
         defer { isScanning = false }
 
         let engine = engine
+        let baseline = baseline
         let directories =
             settings.includeSystemFileTypes
             ? Discovery.defaultDirectories
@@ -125,11 +136,23 @@ final class AppState: ObservableObject {
         let diagnosed = await Task.detached(priority: .userInitiated) {
             let scanner = AssociationScanner(engine: engine, discoveryDirectories: directories)
             let diagnosticEngine = DiagnosticEngine(provider: engine.provider)
-            return diagnosticEngine.diagnose(scanner.scan())
+            return diagnosticEngine.diagnose(scanner.scan(), baseline: baseline)
         }.value
 
         records = diagnosed
         lastScanDate = Date()
+    }
+
+    /// Snapshots `displayRecords`' current apps as the baseline and
+    /// persists it — "Save Current Defaults" the first time, "Update
+    /// Baseline" (§21) after. Re-scans afterward so `.changed`/
+    /// `matchesBaseline` reflect the just-saved state immediately rather
+    /// than waiting for the next manual scan.
+    func saveCurrentDefaultsAsBaseline(name: String = "My Mac") async throws {
+        let newBaseline = Baseline.capturing(name: name, from: displayRecords)
+        try baselineStore.save(newBaseline)
+        baseline = newBaseline
+        await scan()
     }
 
     func ignore(_ record: AssociationRecord) {

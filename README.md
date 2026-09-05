@@ -70,7 +70,9 @@ AssociationDoctor/
 │                        RepairService (single-item apply + read-back),
 │                        RawDefaultHandlerProviding / AppDeclaredTypesReading
 │                        (the two local adapters below)
-├── Persistence/         SettingsStore (UserDefaults-backed §22 toggles)
+├── Persistence/         SettingsStore (UserDefaults-backed §22 toggles);
+│                        BaselineStore (Phase 8 — JSON baseline in
+│                        Application Support, injectable directory for tests)
 └── Features/
     ├── Dashboard/       Health score, status breakdown (§18)
     ├── Problems/        Filterable list; Fix / Choose Another / Ignore (§19)
@@ -81,7 +83,9 @@ AssociationDoctor/
     │                    anything it isn't already (not in the original spec
     │                    — added on request; the reverse of All Associations
     │                    over the same scan data, no new scanning needed)
-    ├── Profiles/        Honest empty state — Baseline persistence is Phase 8
+    ├── Profiles/        Save/Compare/Restore/Update Baseline (§13/§14/§21,
+    │                    Phase 8) — single "My Mac" baseline (MVP scope);
+    │                    Restore reuses Shared/RepairPlanSheet, no second flow
     ├── Settings/         (§22)
     └── Shared/          AppIconView, StatusBadge, AppPickerSheet (shared by
                          "Choose Another" / "Change..." / "Make Default"),
@@ -100,7 +104,9 @@ AssociationDoctorTests/
 ├── RecommendationEngineTests.swift           — each scoring signal + confidence
 ├── RepairServiceTests.swift                  — applied/alreadySet/notConfirmed/failed
 ├── HealthScoreTests.swift
-└── FileCategoryClassifierTests.swift
+├── FileCategoryClassifierTests.swift
+└── BaselineStoreTests.swift                  — save/load round-trip against a temp
+                                                 directory; Baseline.capturing conversion
 
 All tests run against fakes; none touches real machine defaults.
 ```
@@ -116,12 +122,21 @@ for now — a single click on one card never needed that machinery.
 `[record.id: bundleID-at-ignore-time]` map and auto-invalidates an entry
 once the current app no longer matches it — matching §23's staleness rule
 — but nothing is persisted to disk yet. Persisting `IgnoredFinding` can
-follow `BaselineStore`'s pattern once that lands in Phase 8.
+follow `BaselineStore`'s pattern (below) if that becomes worth doing.
 
-**Profiles is an honest empty state.** The `Baseline` model has existed
-since Phase 2, but wiring Save/Compare/Restore/Export against a
-`BaselineStore` that doesn't exist yet would mean fake data or dead
-buttons — both worse than telling the user plainly that it's coming.
+**Phase 8 — Baseline is wired end to end.** `BaselineStore` persists the
+single "My Mac" baseline (§14 MVP scope — multiple named profiles is V2)
+as JSON in Application Support, with an injectable directory so tests never
+touch the real one. `AppState` loads it once at launch and threads it
+through every `scan()` call, so `DiagnosticEngine`'s `.changed` status and
+`RecommendationEngine`'s `matchesBaseline` scoring — both implemented and
+tested since Phase 2/5 — are live for the first time. Profiles' Compare
+reads the resulting `.changed` records directly rather than inventing a
+second diff model; Restore builds a `RepairPlan` from them (baseline's
+bundle ID as `desiredApp`, skipping any baseline app no longer installed)
+and hands it to the same `RepairPlanSheet` Phase 7 built — no second
+review/apply/result flow. Export (§21's wireframe) is V1.1 per the spec's
+own roadmap (§32) and was left out.
 
 **Common vs. All in All Associations.** A real scan turns up 1000+ types —
 most of them obscure things some installed app happens to declare, not
