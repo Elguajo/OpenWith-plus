@@ -1,10 +1,12 @@
 import OpenWithCore
 
-/// One scanned file type / URL scheme and what currently opens it (§5.1).
+/// One diagnosed file type / URL scheme: what currently opens it and
+/// whether that's healthy (§5.1). Produced by `DiagnosticEngine` from a
+/// `ScannedAssociation` — never constructed directly from a scan, so
+/// `status` is never a guess.
 ///
-/// `status` and `recommendation` join this record once the Diagnostic
-/// Engine (Phase 4) and Recommendation Engine (Phase 5) exist to compute
-/// them — a scanner-only guess would just be redone there.
+/// `recommendation` stays `nil` until the Recommendation Engine (Phase 5)
+/// exists to compute it.
 struct AssociationRecord: Identifiable, Hashable, Sendable {
     let id: String
     let target: Target
@@ -13,4 +15,6 @@ struct AssociationRecord: Identifiable, Hashable, Sendable {
     let category: FileCategory
     let currentApp: AppInfo?
     let availableApps: [AppInfo]
+    let status: AssociationStatus
+    let recommendation: Recommendation?
 }

@@ -23,6 +23,28 @@ see `project.yml`), not vendored or forked:
 - Pinned to the `v0.1.0` tag (current `master`), matching this project's
   `swift-tools-version: 6.1` / macOS 15 baseline exactly.
 
+**Gap found in Phase 4:** no public OpenWithCore API can tell "no default
+was ever set" apart from "the default was set, but that app is now
+uninstalled" (`broken`, §10.1) — `LaunchServicesProviding.defaultApp`
+always resolves the registered bundle ID to an installed `AppInfo` first,
+collapsing both cases to `nil`. Per §44 ("implement a local adapter before
+forking"), `Services/RawDefaultHandlerProviding.swift` calls the same
+public LaunchServices C API `LaunchServicesProvider` already uses
+internally (`LSCopyDefaultRoleHandlerForContentType` /
+`LSCopyDefaultHandlerForURLScheme`) to read the raw registration, behind
+its own small protocol so tests still never touch real LaunchServices.
+
+**Gap found in Phase 5:** the "category matches" signal (§11.1, +30 —
+the heaviest weight in the scoring table) needs to know what *kinds* of
+files a candidate app generally handles, not just this one target.
+OpenWithCore's `Discovery` only exposes a directory-wide *merged* target
+list built for the curated table; it has no per-app query.
+`Services/AppDeclaredTypesReading.swift` reads one app's own
+`CFBundleDocumentTypes` (the same Info.plist keys `Discovery` reads
+internally, scoped to a single app) so `RecommendationEngine` can tally its
+declared UTIs/extensions into a dominant `FileCategory` — again a local
+adapter, not a fork, behind its own fake-able protocol.
+
 ## Project structure
 
 Generated via [XcodeGen](https://github.com/yonaskolb/XcodeGen) from
@@ -37,25 +59,34 @@ xcodegen generate
 ```text
 AssociationDoctor/
 ├── App/            AssociationDoctorApp.swift — @main entry point
-├── Domain/         AssociationRecord, FileCategory, AssociationStatus,
+├── Domain/         ScannedAssociation (raw scan output) → AssociationRecord
+│                   (diagnosed, with status); FileCategory, AssociationStatus,
 │                   Finding, Recommendation, Baseline, RepairPlan
 ├── Services/       AssociationScanner (curated + discovered targets →
-│                   deduped, categorized records), FileCategoryClassifier
+│                   deduped, categorized ScannedAssociations),
+│                   FileCategoryClassifier, DiagnosticEngine (→ status),
+│                   RawDefaultHandlerProviding (broken-detection adapter),
+│                   RecommendationEngine (deterministic scoring, §11),
+│                   AppDeclaredTypesReading (per-app category adapter)
 └── Features/Scan/  ScanDebugView — temporary PoC UI (until Phase 6's
                     real Dashboard/Problems/All Associations screens)
 
 AssociationDoctorTests/
-├── FakeLaunchServicesProvider.swift    — in-memory LaunchServicesProviding
-├── AssociationScannerTests.swift       — dedup, categorization, no-default;
-│                                         never touches real machine defaults
+├── FakeLaunchServicesProvider.swift     — in-memory LaunchServicesProviding
+├── FakeRawDefaultHandlerProvider.swift  — in-memory RawDefaultHandlerProviding
+├── FakeAppDeclaredTypesReader.swift     — in-memory AppDeclaredTypesReading
+├── AssociationScannerTests.swift        — dedup, categorization, no-default
+├── DiagnosticEngineTests.swift          — healthy/broken/noDefault/changed/
+│                                         suspicious, and baseline priority
+├── RecommendationEngineTests.swift      — each scoring signal + confidence
 └── FileCategoryClassifierTests.swift
+
+All tests run against fakes; none touches real machine defaults.
 ```
 
-`AssociationRecord` intentionally has no `status` or `recommendation` field
-yet: those are computed by the Diagnostic Engine (Phase 4) and
-Recommendation Engine (Phase 5), which don't exist yet — adding the fields
-now would mean guessing their values in the scanner and redoing it later.
-`AppState` and the real Dashboard/Problems/Profiles UI land with Phases 6–8.
+`AssociationStatus.ignored` stays unreachable until the Ignore feature
+(§23) exists — `DiagnosticEngine` never guesses at it. `AppState` and the
+real Dashboard/Problems/Profiles UI land with Phases 6–8.
 
 ## Build & test
 

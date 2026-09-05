@@ -1,9 +1,10 @@
 import OpenWithCore
 
-/// Builds `AssociationRecord`s from OpenWithCore's curated + discovered
-/// targets. Takes an `Engine` rather than constructing `.live()` itself so
-/// tests can inject a fake `LaunchServicesProviding` and never touch the
-/// machine's real defaults.
+/// Builds `ScannedAssociation`s from OpenWithCore's curated + discovered
+/// targets — the raw material `DiagnosticEngine` turns into diagnosed
+/// `AssociationRecord`s. Takes an `Engine` rather than constructing
+/// `.live()` itself so tests can inject a fake `LaunchServicesProviding`
+/// and never touch the machine's real defaults.
 struct AssociationScanner {
     var engine: Engine
     var discoveryDirectories: [String]
@@ -13,7 +14,7 @@ struct AssociationScanner {
         self.discoveryDirectories = discoveryDirectories
     }
 
-    func scan() -> [AssociationRecord] {
+    func scan() -> [ScannedAssociation] {
         let curated = Curated.targets
         let discovered = Discovery.discoverTargets(directories: discoveryDirectories, existing: curated)
         let allEntries = curated + discovered
@@ -29,7 +30,7 @@ struct AssociationScanner {
         // the same LaunchServices key; dedupe on that, not on the raw
         // `Target`, or the same file type shows up twice (§7).
         var seenResolved = Set<ResolvedTarget>()
-        var records: [AssociationRecord] = []
+        var records: [ScannedAssociation] = []
 
         for entry in allEntries {
             let target = entry.target
@@ -46,7 +47,7 @@ struct AssociationScanner {
                 ?? labelByTarget[target]
 
             records.append(
-                AssociationRecord(
+                ScannedAssociation(
                     id: target.description,
                     target: target,
                     uti: uti,
