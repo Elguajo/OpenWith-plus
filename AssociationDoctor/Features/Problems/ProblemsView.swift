@@ -9,11 +9,19 @@ struct ProblemsView: View {
     @State private var appPickerRecord: AssociationRecord?
     @State private var outcomeMessage: RepairOutcomeMessage?
     @State private var isApplying = false
+    @State private var reviewingPlan: RepairPlan?
 
     private var problems: [AssociationRecord] {
         let nonHealthy = appState.displayRecords.filter { $0.status != .healthy && $0.status != .ignored }
         guard let status = filter.status else { return nonHealthy }
         return nonHealthy.filter { $0.status == status }
+    }
+
+    /// Every currently-visible problem `appState` has an opinion on, as a
+    /// batch — "Fix All" only ever offers what's on screen under the
+    /// active filter, never the full unfiltered problem set behind it.
+    private var fixAllPlan: RepairPlan {
+        RepairPlan.build(from: problems, recommendation: appState.visibleRecommendation)
     }
 
     var body: some View {
@@ -43,11 +51,21 @@ struct ProblemsView: View {
             }
         }
         .navigationTitle("Problems")
+        .toolbar {
+            ToolbarItem {
+                let plan = fixAllPlan
+                Button("Fix All (\(plan.changes.count))") { reviewingPlan = plan }
+                    .disabled(plan.changes.isEmpty)
+            }
+        }
         .sheet(item: $appPickerRecord) { record in
             AppPickerSheet(record: record) { app in
                 appPickerRecord = nil
                 applyFix(record, app: app)
             }
+        }
+        .sheet(item: $reviewingPlan) { plan in
+            RepairPlanSheet(plan: plan, apply: appState.applyRepairAction, onFinished: { Task { await appState.scan() } })
         }
         .alert(item: $outcomeMessage) { message in
             Alert(title: Text("Repair Result"), message: Text(message.text), dismissButton: .default(Text("OK")))

@@ -1,8 +1,10 @@
 import Foundation
+import SwiftUI
 
-/// Shared by every screen that can trigger a single-item repair (Problems,
-/// All Associations, Applications) — one place for the user-facing wording
-/// of §15/§16's "never assume success" outcomes.
+/// Shared by every screen that can trigger a repair — single-item
+/// (Problems, All Associations, Applications) or batch (`RepairPlanSheet`,
+/// Phase 7) — one place for the user-facing wording of §15/§16's "never
+/// assume success" outcomes.
 extension RepairOutcome {
     var displayMessage: String {
         switch self {
@@ -14,6 +16,35 @@ extension RepairOutcome {
         case .failed(let message): return "Couldn't change the default: \(message)"
         }
     }
+
+    /// Short label for a compact per-row badge, e.g. in `RepairPlanSheet`'s
+    /// result list — `displayMessage` is the sentence, this is the chip.
+    var shortLabel: String {
+        switch self {
+        case .applied: return "Applied"
+        case .alreadySet: return "Already Set"
+        case .notConfirmed: return "Declined"
+        case .failed: return "Failed"
+        }
+    }
+
+    var systemImage: String {
+        switch self {
+        case .applied: return "checkmark.circle.fill"
+        case .alreadySet: return "checkmark.circle"
+        case .notConfirmed: return "exclamationmark.circle.fill"
+        case .failed: return "xmark.circle.fill"
+        }
+    }
+
+    var tintColor: Color {
+        switch self {
+        case .applied: return .green
+        case .alreadySet: return .secondary
+        case .notConfirmed: return .orange
+        case .failed: return .red
+        }
+    }
 }
 
 struct RepairOutcomeMessage: Identifiable {
@@ -22,5 +53,22 @@ struct RepairOutcomeMessage: Identifiable {
 
     init(_ outcome: RepairOutcome) {
         self.text = outcome.displayMessage
+    }
+}
+
+/// Same visual language as `StatusBadge` (`AppIconView.swift`) — a colored
+/// capsule pairing an icon with text, never color alone (§17.1) — applied
+/// to a repair result instead of an association status.
+struct RepairOutcomeBadge: View {
+    let outcome: RepairOutcome
+
+    var body: some View {
+        Label(outcome.shortLabel, systemImage: outcome.systemImage)
+            .labelStyle(.titleAndIcon)
+            .font(.caption.weight(.medium))
+            .padding(.horizontal, 8)
+            .padding(.vertical, 3)
+            .background(outcome.tintColor.opacity(0.15), in: Capsule())
+            .foregroundStyle(outcome.tintColor)
     }
 }

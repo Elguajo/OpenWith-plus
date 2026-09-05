@@ -3,6 +3,7 @@ import SwiftUI
 /// §18. The 5-second read: is anything wrong, and how much.
 struct DashboardView: View {
     @EnvironmentObject private var appState: AppState
+    @State private var reviewingPlan: RepairPlan?
 
     var body: some View {
         ScrollView {
@@ -12,11 +13,7 @@ struct DashboardView: View {
                 } else {
                     scoreSection
                     breakdownSection
-                    Button("Review Problems") {
-                        appState.selectedSection = .problems
-                    }
-                    .buttonStyle(.borderedProminent)
-                    .disabled(appState.healthScore.scannedCount == 0 || problemCount == 0)
+                    reviewOrFixButton
 
                     lastScanFooter
                 }
@@ -40,11 +37,34 @@ struct DashboardView: View {
                 .disabled(appState.isScanning)
             }
         }
+        .sheet(item: $reviewingPlan) { plan in
+            RepairPlanSheet(plan: plan, apply: appState.applyRepairAction, onFinished: { Task { await appState.scan() } })
+        }
     }
 
-    private var problemCount: Int {
-        let score = appState.healthScore
-        return score.suspiciousCount + score.brokenCount + score.changedCount + score.noDefaultCount
+    private var problemRecords: [AssociationRecord] {
+        appState.displayRecords.filter { $0.status != .healthy && $0.status != .ignored }
+    }
+
+    private var problemCount: Int { problemRecords.count }
+
+    /// Once there's an actual `RepairPlan` to offer (every problem has a
+    /// recommendation), the button skips the trip through Problems and
+    /// opens the batch review directly. With problems but no fixable plan
+    /// (e.g. low-confidence recommendations hidden by settings), it still
+    /// just navigates — there's nothing yet worth reviewing in a sheet.
+    @ViewBuilder
+    private var reviewOrFixButton: some View {
+        let plan = RepairPlan.build(from: problemRecords, recommendation: appState.visibleRecommendation)
+        Button(plan.changes.isEmpty ? "Review Problems" : "Fix \(plan.changes.count) Issues") {
+            if plan.changes.isEmpty {
+                appState.selectedSection = .problems
+            } else {
+                reviewingPlan = plan
+            }
+        }
+        .buttonStyle(.borderedProminent)
+        .disabled(problemCount == 0)
     }
 
     private var emptyState: some View {

@@ -27,6 +27,7 @@
 		7F91246858E93E526223969A /* RecommendationEngineTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 96788974A7F17C3B7230FEB2 /* RecommendationEngineTests.swift */; };
 		828B50CF0DFDB7F2FDA6688D /* AssociationScannerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = E871D4FD88CADC07367CF6B2 /* AssociationScannerTests.swift */; };
 		83ABB091CF8DE82785802516 /* RepairServiceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9F342E5D66BB81BB563B3533 /* RepairServiceTests.swift */; };
+		A06D501F25947A2E8EC04E6E /* RepairPlanRunner.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0285D5F1874E1A461B707EA5 /* RepairPlanRunner.swift */; };
 		AACC660061546220398E47B4 /* AssociationScanner.swift in Sources */ = {isa = PBXBuildFile; fileRef = 26E4DE59C165D88DAF46563E /* AssociationScanner.swift */; };
 		B4646D4AB8EE53B9E13F9185 /* AssociationDoctorApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 00DAD8C4D06517C5B94F52A6 /* AssociationDoctorApp.swift */; };
 		B561841BAFD1B8E056F55433 /* FakeRawDefaultHandlerProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = E34D3F407BF526E46C8C77B7 /* FakeRawDefaultHandlerProvider.swift */; };
@@ -40,12 +41,14 @@
 		CA9BC2629A674C5EA52DDB72 /* AppPickerSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = F21438E407A63440828D2A12 /* AppPickerSheet.swift */; };
 		CE812B9EFAE552EDFC62FA5F /* AppDeclaredTypesReading.swift in Sources */ = {isa = PBXBuildFile; fileRef = 216DD8577F0E96D9532B9799 /* AppDeclaredTypesReading.swift */; };
 		DAA93844787D62B9859B0DAD /* RepairOutcomeMessage.swift in Sources */ = {isa = PBXBuildFile; fileRef = D83C69152D4BB54BCB8F58AF /* RepairOutcomeMessage.swift */; };
+		DCA093D28130B9BA6FD1DA93 /* RepairPlanRunnerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F48DA119E27EC8B69D40BD9E /* RepairPlanRunnerTests.swift */; };
 		E18B48814736E6842F4CF0EF /* RepairService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6BC1E92E4DDF6E2F1CA59ED6 /* RepairService.swift */; };
 		E5839987F4B2A767F09D773C /* RootView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5281B190780E6900C2DD169B /* RootView.swift */; };
 		EC6AC089080E10F663582863 /* DiagnosticEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = B49EE11A84852B0648A85ED5 /* DiagnosticEngine.swift */; };
 		EEFA4BA65D4AF65F8181B05B /* RecommendationEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7D1D145C5CAE9E2296BD0FF1 /* RecommendationEngine.swift */; };
 		EF012DE79B86BC55A4923B37 /* ScannedAssociation.swift in Sources */ = {isa = PBXBuildFile; fileRef = D9F152099B13C95D677961BA /* ScannedAssociation.swift */; };
 		F00365F18BAD6578F76A7ADB /* AppState.swift in Sources */ = {isa = PBXBuildFile; fileRef = 498A138C64D0790576B64128 /* AppState.swift */; };
+		F4F8F83A378E91AC7C35A797 /* RepairPlanSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8458B846D6B95A9840BEAE46 /* RepairPlanSheet.swift */; };
 		FB47EFDEB4D3CF530B34B529 /* OpenWithCore in Frameworks */ = {isa = PBXBuildFile; productRef = 42FE01A2ED99716C2B691D82 /* OpenWithCore */; };
 		FE3DC687C82CB982DCE87F75 /* AssociationRecord.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1B350CA1A815AD53966541E7 /* AssociationRecord.swift */; };
 		FFE192C0080960540B559BF9 /* HealthScoreTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7343FC62022422F21F26D506 /* HealthScoreTests.swift */; };
@@ -63,6 +66,7 @@
 
 /* Begin PBXFileReference section */
 		00DAD8C4D06517C5B94F52A6 /* AssociationDoctorApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AssociationDoctorApp.swift; sourceTree = "<group>"; };
+		0285D5F1874E1A461B707EA5 /* RepairPlanRunner.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RepairPlanRunner.swift; sourceTree = "<group>"; };
 		05433827DB6BFCA1ABE9FC01 /* HealthScore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HealthScore.swift; sourceTree = "<group>"; };
 		0A2B5D0CD4ED2844184E5D11 /* ProfilesView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProfilesView.swift; sourceTree = "<group>"; };
 		187D8D9B0423EDBEC19575FB /* FakeWritableLaunchServicesProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FakeWritableLaunchServicesProvider.swift; sourceTree = "<group>"; };
@@ -89,6 +93,7 @@
 		6EB24F8153AACE9B4B615752 /* ApplicationsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ApplicationsView.swift; sourceTree = "<group>"; };
 		7343FC62022422F21F26D506 /* HealthScoreTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HealthScoreTests.swift; sourceTree = "<group>"; };
 		7D1D145C5CAE9E2296BD0FF1 /* RecommendationEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecommendationEngine.swift; sourceTree = "<group>"; };
+		8458B846D6B95A9840BEAE46 /* RepairPlanSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RepairPlanSheet.swift; sourceTree = "<group>"; };
 		96788974A7F17C3B7230FEB2 /* RecommendationEngineTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecommendationEngineTests.swift; sourceTree = "<group>"; };
 		98C85FCA67D4BE936AD16985 /* FakeAppDeclaredTypesReader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FakeAppDeclaredTypesReader.swift; sourceTree = "<group>"; };
 		9DF7A348123B789C01B3737F /* DashboardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DashboardView.swift; sourceTree = "<group>"; };
@@ -105,6 +110,7 @@
 		EF8FE12D850C863279362416 /* RawDefaultHandlerProviding.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RawDefaultHandlerProviding.swift; sourceTree = "<group>"; };
 		F21438E407A63440828D2A12 /* AppPickerSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppPickerSheet.swift; sourceTree = "<group>"; };
 		F2A30A51BBA76CC01CDCCB26 /* AssociationDoctor.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = AssociationDoctor.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		F48DA119E27EC8B69D40BD9E /* RepairPlanRunnerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RepairPlanRunnerTests.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -166,6 +172,7 @@
 				EBFD33BF22560DF2BAD9D44A /* FileCategoryClassifier.swift */,
 				EF8FE12D850C863279362416 /* RawDefaultHandlerProviding.swift */,
 				7D1D145C5CAE9E2296BD0FF1 /* RecommendationEngine.swift */,
+				0285D5F1874E1A461B707EA5 /* RepairPlanRunner.swift */,
 				6BC1E92E4DDF6E2F1CA59ED6 /* RepairService.swift */,
 			);
 			path = Services;
@@ -183,6 +190,7 @@
 				47AAEE2407DB417029EF47E0 /* FileCategoryClassifierTests.swift */,
 				7343FC62022422F21F26D506 /* HealthScoreTests.swift */,
 				96788974A7F17C3B7230FEB2 /* RecommendationEngineTests.swift */,
+				F48DA119E27EC8B69D40BD9E /* RepairPlanRunnerTests.swift */,
 				9F342E5D66BB81BB563B3533 /* RepairServiceTests.swift */,
 			);
 			path = AssociationDoctorTests;
@@ -210,6 +218,7 @@
 				5DF163257932AA974299D999 /* AppIconView.swift */,
 				F21438E407A63440828D2A12 /* AppPickerSheet.swift */,
 				D83C69152D4BB54BCB8F58AF /* RepairOutcomeMessage.swift */,
+				8458B846D6B95A9840BEAE46 /* RepairPlanSheet.swift */,
 			);
 			path = Shared;
 			sourceTree = "<group>";
@@ -389,6 +398,7 @@
 				7BE7AA676F8B3E07A815363F /* FileCategoryClassifierTests.swift in Sources */,
 				FFE192C0080960540B559BF9 /* HealthScoreTests.swift in Sources */,
 				7F91246858E93E526223969A /* RecommendationEngineTests.swift in Sources */,
+				DCA093D28130B9BA6FD1DA93 /* RepairPlanRunnerTests.swift in Sources */,
 				83ABB091CF8DE82785802516 /* RepairServiceTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -422,6 +432,8 @@
 				EEFA4BA65D4AF65F8181B05B /* RecommendationEngine.swift in Sources */,
 				DAA93844787D62B9859B0DAD /* RepairOutcomeMessage.swift in Sources */,
 				2A68B190EE5A1F85690C3396 /* RepairPlan.swift in Sources */,
+				A06D501F25947A2E8EC04E6E /* RepairPlanRunner.swift in Sources */,
+				F4F8F83A378E91AC7C35A797 /* RepairPlanSheet.swift in Sources */,
 				E18B48814736E6842F4CF0EF /* RepairService.swift in Sources */,
 				E5839987F4B2A767F09D773C /* RootView.swift in Sources */,
 				EF012DE79B86BC55A4923B37 /* ScannedAssociation.swift in Sources */,

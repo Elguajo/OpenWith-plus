@@ -151,6 +151,15 @@ final class AppState: ObservableObject {
         return outcome
     }
 
+    /// The same single-item `RepairService.apply` used by `applyFix`, bare
+    /// — for `RepairPlanRunner` (Phase 7) to sequence across a batch. No
+    /// rescan here: rescanning after every step of an 8-item plan would be
+    /// wasteful and would fight the running plan's own progress list, so
+    /// the caller rescans once after the whole plan finishes.
+    func applyRepairAction(app: AppInfo, to target: Target) async -> RepairOutcome {
+        await repairService.apply(app: app, to: target)
+    }
+
     private func isURLScheme(_ target: Target) -> Bool {
         if case .urlScheme = target { return true }
         return false
