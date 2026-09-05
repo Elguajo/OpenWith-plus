@@ -1,0 +1,70 @@
+# XcodeGen spec for Association Doctor.
+#
+# Regenerate after editing:  xcodegen generate
+# The generated AssociationDoctor.xcodeproj is committed so CI/other
+# machines do not need xcodegen installed (same convention as upstream
+# jmarette/openwith's Apps/project.yml).
+name: AssociationDoctor
+options:
+  bundleIdPrefix: com.associationdoctor
+  deploymentTarget:
+    macOS: "15.0"
+
+packages:
+  OpenWith:
+    url: https://github.com/jmarette/openwith.git
+    from: 0.1.0
+
+settings:
+  base:
+    SWIFT_VERSION: "6.1"
+    MARKETING_VERSION: "0.1.0"
+    CURRENT_PROJECT_VERSION: "1"
+
+targets:
+  AssociationDoctor:
+    type: application
+    platform: macOS
+    sources:
+      - path: AssociationDoctor
+    dependencies:
+      - package: OpenWith
+        product: OpenWithCore
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.associationdoctor.app
+        ENABLE_HARDENED_RUNTIME: YES
+        CODE_SIGN_STYLE: Automatic
+    info:
+      path: AssociationDoctor/Info.plist
+      properties:
+        CFBundleDisplayName: Association Doctor
+        LSMinimumSystemVersion: "15.0"
+        LSApplicationCategoryType: public.app-category.utilities
+        NSHumanReadableCopyright: "© 2026"
+
+  AssociationDoctorTests:
+    type: bundle.unit-test
+    platform: macOS
+    sources:
+      - path: AssociationDoctorTests
+    dependencies:
+      - target: AssociationDoctor
+      - package: OpenWith
+        product: OpenWithCore
+    settings:
+      base:
+        SWIFT_VERSION: "6.1"
+        GENERATE_INFOPLIST_FILE: YES
+
+schemes:
+  AssociationDoctor:
+    build:
+      targets:
+        AssociationDoctor: all
+        AssociationDoctorTests: [test]
+    test:
+      targets:
+        - AssociationDoctorTests
+    run:
+      config: Debug
