@@ -4,7 +4,7 @@ import SwiftUI
 struct AssociationDoctorApp: App {
     var body: some Scene {
         WindowGroup {
-            ScanDebugView()
+            RootView()
         }
     }
 }

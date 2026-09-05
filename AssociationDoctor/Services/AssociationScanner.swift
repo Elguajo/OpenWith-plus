@@ -55,7 +55,8 @@ struct AssociationScanner {
                     category: FileCategoryClassifier.classify(
                         target: target, uti: uti, curatedCategory: categoryByTarget[target]),
                     currentApp: engine.currentDefault(for: resolved),
-                    availableApps: (try? engine.handlers(for: target)) ?? []
+                    availableApps: (try? engine.handlers(for: target)) ?? [],
+                    isCurated: entry.category != .discovered
                 )
             )
         }

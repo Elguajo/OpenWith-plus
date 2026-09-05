@@ -58,35 +58,90 @@ xcodegen generate
 
 ```text
 AssociationDoctor/
-├── App/            AssociationDoctorApp.swift — @main entry point
-├── Domain/         ScannedAssociation (raw scan output) → AssociationRecord
-│                   (diagnosed, with status); FileCategory, AssociationStatus,
-│                   Finding, Recommendation, Baseline, RepairPlan
-├── Services/       AssociationScanner (curated + discovered targets →
-│                   deduped, categorized ScannedAssociations),
-│                   FileCategoryClassifier, DiagnosticEngine (→ status),
-│                   RawDefaultHandlerProviding (broken-detection adapter),
-│                   RecommendationEngine (deterministic scoring, §11),
-│                   AppDeclaredTypesReading (per-app category adapter)
-└── Features/Scan/  ScanDebugView — temporary PoC UI (until Phase 6's
-                    real Dashboard/Problems/All Associations screens)
+├── App/                 AssociationDoctorApp (@main) → RootView (sidebar +
+│                        detail); AppState (scan/diagnose pipeline, session
+│                        ignore list, navigation, settings)
+├── Domain/              ScannedAssociation → AssociationRecord (status +
+│                        recommendation); FileCategory, AssociationStatus,
+│                        Finding, Recommendation, Baseline, RepairPlan,
+│                        HealthScore (§12)
+├── Services/            AssociationScanner, FileCategoryClassifier,
+│                        DiagnosticEngine, RecommendationEngine,
+│                        RepairService (single-item apply + read-back),
+│                        RawDefaultHandlerProviding / AppDeclaredTypesReading
+│                        (the two local adapters below)
+├── Persistence/         SettingsStore (UserDefaults-backed §22 toggles)
+└── Features/
+    ├── Dashboard/       Health score, status breakdown (§18)
+    ├── Problems/        Filterable list; Fix / Choose Another / Ignore (§19)
+    ├── Associations/    Searchable, category-grouped list (§20); defaults to
+    │                    Common (curated) scope, "All" reveals the long tail
+    ├── Applications/    Browse by program instead of by file type: pick an
+    │                    app, see everything it can open, "Make Default" for
+    │                    anything it isn't already (not in the original spec
+    │                    — added on request; the reverse of All Associations
+    │                    over the same scan data, no new scanning needed)
+    ├── Profiles/        Honest empty state — Baseline persistence is Phase 8
+    ├── Settings/         (§22)
+    └── Shared/          AppIconView, StatusBadge, AppPickerSheet (shared by
+                         "Choose Another" / "Change..." / "Make Default"),
+                         RepairOutcomeMessage (shared §15/§16 result wording),
+                         recommendation display text
 
 AssociationDoctorTests/
-├── FakeLaunchServicesProvider.swift     — in-memory LaunchServicesProviding
-├── FakeRawDefaultHandlerProvider.swift  — in-memory RawDefaultHandlerProviding
-├── FakeAppDeclaredTypesReader.swift     — in-memory AppDeclaredTypesReading
-├── AssociationScannerTests.swift        — dedup, categorization, no-default
-├── DiagnosticEngineTests.swift          — healthy/broken/noDefault/changed/
-│                                         suspicious, and baseline priority
-├── RecommendationEngineTests.swift      — each scoring signal + confidence
+├── FakeLaunchServicesProvider.swift          — read-only LaunchServicesProviding
+├── FakeWritableLaunchServicesProvider.swift  — same, but setDefault actually
+│                                               sticks (needed to test apply)
+├── FakeRawDefaultHandlerProvider.swift       — in-memory RawDefaultHandlerProviding
+├── FakeAppDeclaredTypesReader.swift          — in-memory AppDeclaredTypesReading
+├── AssociationScannerTests.swift             — dedup, categorization, no-default
+├── DiagnosticEngineTests.swift               — healthy/broken/noDefault/changed/
+│                                                suspicious, and baseline priority
+├── RecommendationEngineTests.swift           — each scoring signal + confidence
+├── RepairServiceTests.swift                  — applied/alreadySet/notConfirmed/failed
+├── HealthScoreTests.swift
 └── FileCategoryClassifierTests.swift
 
 All tests run against fakes; none touches real machine defaults.
 ```
 
-`AssociationStatus.ignored` stays unreachable until the Ignore feature
-(§23) exists — `DiagnosticEngine` never guesses at it. `AppState` and the
-real Dashboard/Problems/Profiles UI land with Phases 6–8.
+**Phase 6 scope decision — single-item repair, not the batch Repair Plan.**
+Problems' Fix/Choose Another call `RepairService.apply` directly
+(`Engine.setDefault` + read-back, exactly §15/§16's per-change contract).
+The `RepairPlan`/`RepairAction` batch types (Phase 7: Dashboard's "Fix N
+Issues", Profile Restore, with a progress/confirmation queue) stay unused
+for now — a single click on one card never needed that machinery.
+
+**Ignore (§23) is session-only.** `AppState` keeps an in-memory
+`[record.id: bundleID-at-ignore-time]` map and auto-invalidates an entry
+once the current app no longer matches it — matching §23's staleness rule
+— but nothing is persisted to disk yet. Persisting `IgnoredFinding` can
+follow `BaselineStore`'s pattern once that lands in Phase 8.
+
+**Profiles is an honest empty state.** The `Baseline` model has existed
+since Phase 2, but wiring Save/Compare/Restore/Export against a
+`BaselineStore` that doesn't exist yet would mean fake data or dead
+buttons — both worse than telling the user plainly that it's coming.
+
+**Common vs. All in All Associations.** A real scan turns up 1000+ types —
+most of them obscure things some installed app happens to declare, not
+anything a person is looking for. `AssociationRecord.isCurated` (true for
+OpenWithCore's hand-picked `Curated.targets` — .rar/.zip/.mp4/.mp3 and the
+rest) lets the screen default to that short, recognizable list instead of
+burying it; "All" reveals the long tail on request. Every row — not just
+Problems — can reassign its default via the same `AppPickerSheet` +
+`RepairService` path, since fixing a *problem* isn't the only reason
+someone wants to pick a different app.
+
+**Applications screen (user-requested, not in the original spec).** Every
+other screen answers "what opens this file type"; this one answers "what
+can this program open, and can I just make it the default for that" —
+picked an app first, not a type first. It needed zero new scanning:
+`AssociationRecord.availableApps` (NSWorkspace's own, real handler list for
+a type — already computed by `AssociationScanner`) is exactly "which apps
+can open this," so `AppState.installedApps` / `records(for:)` just
+re-slices the existing scan by app instead of by type. "Make Default"
+reuses the same `RepairService` path as Problems/All Associations.
 
 ## Build & test
 

@@ -39,7 +39,8 @@ struct DiagnosticEngine {
             currentApp: scanned.currentApp,
             availableApps: scanned.availableApps,
             status: status(for: scanned, baseline: baseline, recommendation: recommendation),
-            recommendation: recommendation
+            recommendation: recommendation,
+            isCurated: scanned.isCurated
         )
     }
 
