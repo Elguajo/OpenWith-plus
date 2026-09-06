@@ -115,9 +115,14 @@ final class AppState: ObservableObject {
 
     /// `nil` when low-confidence suggestions are hidden by settings and
     /// this one doesn't clear the bar (§11.2: low only shows options, it
-    /// isn't asserted as *the* recommendation).
+    /// isn't asserted as *the* recommendation), or when the suggestion is
+    /// already the current app — a `.changed` record (baseline mismatch)
+    /// can still have `RecommendationEngine` independently score the
+    /// *current* app highest, which isn't a fix worth offering: "Fix" and
+    /// the batch Repair Plan should never present a same-app no-op.
     func visibleRecommendation(for record: AssociationRecord) -> Recommendation? {
         guard let recommendation = record.recommendation else { return nil }
+        if recommendation.suggestedApp.bundleID == record.currentApp?.bundleID { return nil }
         if recommendation.confidence == .low && !settings.showLowConfidenceRecommendations { return nil }
         return recommendation
     }
