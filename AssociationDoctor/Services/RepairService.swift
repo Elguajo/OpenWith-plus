@@ -10,6 +10,12 @@ enum RepairOutcome: Sendable, Equatable {
     case alreadySet(AppInfo)
     case notConfirmed(desired: AppInfo)
     case failed(String)
+    /// The association is protected (`AssociationProtection`) and the
+    /// "allow protected changes" setting is off, so nothing was written.
+    /// Distinct from `failed`: nothing went wrong, the app declined on
+    /// purpose — and distinct from any success case, so a caller can never
+    /// mistake a refusal for an applied change.
+    case notPermitted(reason: ProtectionReason)
 }
 
 /// Applies a single default-app change and reads the result back.

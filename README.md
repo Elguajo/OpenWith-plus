@@ -68,6 +68,8 @@ AssociationDoctor/
 ├── Services/            AssociationScanner, FileCategoryClassifier,
 │                        DiagnosticEngine, RecommendationEngine,
 │                        RepairService (single-item apply + read-back),
+│                        AssociationProtection (what the app refuses to
+│                        rewrite — see "Protected associations" below),
 │                        RawDefaultHandlerProviding / AppDeclaredTypesReading
 │                        (the two local adapters below)
 ├── Persistence/         SettingsStore (UserDefaults-backed §22 toggles);
@@ -90,7 +92,8 @@ AssociationDoctor/
     └── Shared/          AppIconView, StatusBadge, AppPickerSheet (shared by
                          "Choose Another" / "Change..." / "Make Default"),
                          RepairOutcomeMessage (shared §15/§16 result wording),
-                         recommendation display text
+                         ProtectedNotice / ProtectedBadge (why a control is
+                         unavailable), recommendation display text
 
 AssociationDoctorTests/
 ├── FakeLaunchServicesProvider.swift          — read-only LaunchServicesProviding
@@ -117,6 +120,19 @@ Problems' Fix/Choose Another call `RepairService.apply` directly
 The `RepairPlan`/`RepairAction` batch types (Phase 7: Dashboard's "Fix N
 Issues", Profile Restore, with a progress/confirmation queue) stay unused
 for now — a single click on one card never needed that machinery.
+
+**Protected associations.** Everything macOS itself depends on —
+applications and executables, installers and disk images, OS components
+(preference panes, Quick Look generators, aliases, smart folders), and
+Apple's internal URL schemes (`x-apple-*`, `prefs:`, `help:`, App Store and
+Books links) — is read-only in the UI and excluded from every Repair Plan.
+`Settings → Risky → Allow changing protected system associations` (off by
+default) unlocks them. The line is deliberately *not* "the current handler
+is an Apple app": moving .png away from Preview or .html away from Safari is
+the point of the app, and `http`/`https`/`mailto`/`ftp`/`tel`/`ssh` stay
+freely reassignable. `AssociationProtection` holds the rules; `AppState`
+owns the override and re-checks it at the one call that actually writes, so
+a plan built before the setting changed can't slip through.
 
 **Ignore (§23) is session-only.** `AppState` keeps an in-memory
 `[record.id: bundleID-at-ignore-time]` map and auto-invalidates an entry

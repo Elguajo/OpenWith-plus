@@ -25,7 +25,7 @@ struct ProfilesView: View {
             BaselineCompareSheet(records: changedRecords, baseline: appState.baseline)
         }
         .sheet(item: $reviewingPlan) { plan in
-            RepairPlanSheet(plan: plan, apply: appState.applyRepairAction, onFinished: { Task { await appState.scan() } })
+            RepairPlanSheet(plan: plan, apply: appState.applyRepairAction, onFinished: { Task { await appState.refresh(targets: plan.changes.map(\.target)) } })
         }
         .alert("Couldn't Save Baseline", isPresented: Binding(get: { saveErrorMessage != nil }, set: { if !$0 { saveErrorMessage = nil } })) {
             Button("OK") { saveErrorMessage = nil }
@@ -46,24 +46,24 @@ struct ProfilesView: View {
     /// is still installed (i.e. still shows up in `availableApps`) gets a
     /// `RepairAction` back to it. A baseline entry for an app that's since
     /// been uninstalled is silently skipped — there's nothing to apply it
-    /// to, the same way `RepairPlan.build` skips records with no
-    /// recommendation.
+    /// to, the same way every other plan skips what it can't safely set.
+    ///
+    /// Goes through `AppState.desiredApp` rather than re-deriving the
+    /// baseline match here: that one decision point is what keeps Restore,
+    /// "Fix All" and "Fix N Issues" from disagreeing about which app a
+    /// changed association belongs to.
     private var restorePlan: RepairPlan {
-        guard let baseline = appState.baseline else { return RepairPlan(changes: []) }
-        let changes = changedRecords.compactMap { record -> RepairAction? in
-            guard
-                let expectedBundleID = baseline.expectedBundleID(for: record),
-                let desiredApp = record.availableApps.first(where: { $0.bundleID == expectedBundleID })
-            else { return nil }
-            return RepairAction(
-                target: record.target, localizedTypeName: record.localizedTypeName, currentApp: record.currentApp,
-                desiredApp: desiredApp)
-        }
-        return RepairPlan(changes: changes)
+        RepairPlan.build(from: changedRecords, desiredApp: appState.desiredApp)
     }
 
     private var emptyState: some View {
         VStack(spacing: 16) {
+            if let warning = appState.baselineWarning {
+                Label(warning, systemImage: "exclamationmark.triangle")
+                    .font(.callout)
+                    .foregroundStyle(.secondary)
+                    .frame(maxWidth: 520)
+            }
             ContentUnavailableView(
                 "No Baseline Saved",
                 systemImage: "person.crop.rectangle.stack",

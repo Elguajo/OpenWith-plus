@@ -19,11 +19,15 @@ struct RepairPlanSummary: Equatable {
     var declined = 0
     var failed = 0
     var skipped = 0
+    var protected = 0
+    /// Included actions the run never reached — it was stopped part-way.
+    var notApplied = 0
 
     init(states: [RepairStepState]) {
         for state in states {
             switch state {
-            case .pending, .applying: continue
+            case .applying: continue
+            case .pending: notApplied += 1
             case .skipped: skipped += 1
             case .done(let outcome):
                 switch outcome {
@@ -31,6 +35,7 @@ struct RepairPlanSummary: Equatable {
                 case .alreadySet: alreadySet += 1
                 case .notConfirmed: declined += 1
                 case .failed: failed += 1
+                case .notPermitted: protected += 1
                 }
             }
         }
@@ -50,6 +55,7 @@ final class RepairPlanRunner: ObservableObject {
     @Published private(set) var currentIndex: Int?
     @Published private(set) var isRunning = false
     @Published private(set) var hasRun = false
+    @Published private(set) var isCancelled = false
 
     private let apply: (AppInfo, Target) async -> RepairOutcome
 
@@ -71,6 +77,17 @@ final class RepairPlanRunner: ObservableObject {
         states[index] = (states[index] == .skipped) ? .pending : .skipped
     }
 
+    /// Stops the run after the item currently being applied. It cannot
+    /// unwind that one: its confirmation dialog already belongs to macOS,
+    /// and the write either lands or doesn't regardless of what this app
+    /// wants. Everything after it stays `pending` and is reported as "not
+    /// applied" — the alternative was a plan the user could only watch,
+    /// since closing the sheet left it running invisibly.
+    func cancel() {
+        guard isRunning else { return }
+        isCancelled = true
+    }
+
     /// Applies every non-skipped action in order, updating `states` live so
     /// the Review sheet can show per-item progress. Safe to call only once
     /// per runner — a finished (or in-flight) run is left alone.
@@ -83,6 +100,7 @@ final class RepairPlanRunner: ObservableObject {
             currentIndex = nil
         }
         for index in plan.changes.indices where states[index] != .skipped {
+            guard !isCancelled else { break }
             currentIndex = index
             states[index] = .applying
             let action = plan.changes[index]

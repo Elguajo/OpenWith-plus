@@ -21,21 +21,24 @@ struct RepairPlan: Identifiable, Sendable {
 }
 
 extension RepairPlan {
-    /// Builds a batch from every record `recommendation` has an opinion on
-    /// — Problems' "Fix All" and Dashboard's "Fix N Issues" both start
-    /// here. Records with no visible recommendation are silently skipped:
-    /// there's nothing this plan could safely set for them. `recommendation`
-    /// is a closure rather than reading `record.recommendation` directly so
-    /// callers can route through `AppState.visibleRecommendation` and
-    /// respect the low-confidence display setting (§11.2).
+    /// Builds a batch from every record `desiredApp` has an opinion on —
+    /// Problems' "Fix All", Dashboard's "Fix N Issues" and Profiles'
+    /// "Restore" all start here. Records it returns `nil` for are silently
+    /// skipped: there's nothing this plan could safely set for them.
+    ///
+    /// `desiredApp` is a closure rather than something derived from
+    /// `record.recommendation` so the decision stays in one place —
+    /// `AppState.desiredApp`, which puts the saved baseline ahead of the
+    /// heuristic (§43), respects the low-confidence display setting
+    /// (§11.2), and refuses protected system associations.
     static func build(
-        from records: [AssociationRecord], recommendation: (AssociationRecord) -> Recommendation?
+        from records: [AssociationRecord], desiredApp: (AssociationRecord) -> AppInfo?
     ) -> RepairPlan {
         let changes = records.compactMap { record -> RepairAction? in
-            guard let recommendation = recommendation(record) else { return nil }
+            guard let app = desiredApp(record) else { return nil }
             return RepairAction(
                 target: record.target, localizedTypeName: record.localizedTypeName,
-                currentApp: record.currentApp, desiredApp: recommendation.suggestedApp)
+                currentApp: record.currentApp, desiredApp: app)
         }
         return RepairPlan(changes: changes)
     }

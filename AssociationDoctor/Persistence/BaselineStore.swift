@@ -19,16 +19,44 @@ struct BaselineStore {
     }
 
     static var defaultDirectory: URL {
-        let appSupport = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
+        let appSupport =
+            FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first
+            ?? URL(fileURLWithPath: NSHomeDirectory()).appendingPathComponent(
+                "Library/Application Support", isDirectory: true)
         return appSupport.appendingPathComponent("AssociationDoctor", isDirectory: true)
     }
 
-    /// `nil` when nothing has been saved yet, or the file can't be read —
-    /// a missing/corrupt baseline is the same "no baseline" state to every
-    /// caller, not an error worth surfacing.
-    func load() -> Baseline? {
-        guard let data = try? Data(contentsOf: fileURL) else { return nil }
-        return try? Self.decoder.decode(Baseline.self, from: data)
+    /// What was on disk. A file that exists but won't decode is *not* the
+    /// same as no baseline: treating them alike meant the next "Update
+    /// Baseline" quietly overwrote the user's only saved copy of their
+    /// defaults, with nothing ever said about it.
+    enum LoadResult: Equatable {
+        case empty
+        case loaded(Baseline)
+        /// Undecodable. Moved aside to `backupURL` (when that worked) so
+        /// saving again can't destroy it.
+        case unreadable(backupURL: URL?)
+    }
+
+    func load() -> LoadResult {
+        guard let data = try? Data(contentsOf: fileURL) else { return .empty }
+        if let baseline = try? Self.decoder.decode(Baseline.self, from: data) { return .loaded(baseline) }
+        return .unreadable(backupURL: preserveUnreadableFile())
+    }
+
+    /// Renames the bad file to `baseline-unreadable-<timestamp>.json`.
+    /// Never throws: failing to keep a copy is worth reporting, not worth
+    /// blocking the app's launch over.
+    private func preserveUnreadableFile() -> URL? {
+        let backupURL = fileURL
+            .deletingLastPathComponent()
+            .appendingPathComponent("baseline-unreadable-\(Int(Date().timeIntervalSince1970)).json")
+        do {
+            try fileManager.moveItem(at: fileURL, to: backupURL)
+            return backupURL
+        } catch {
+            return nil
+        }
     }
 
     func save(_ baseline: Baseline) throws {

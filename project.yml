@@ -39,6 +39,11 @@ targets:
       path: AssociationDoctor/Info.plist
       properties:
         CFBundleDisplayName: Association Doctor
+        # Driven by the build settings above, so a version bump happens in
+        # one place instead of drifting between project.yml and Info.plist
+        # (the bundle shipped 1.0 while the spec said 0.1.0).
+        CFBundleShortVersionString: $(MARKETING_VERSION)
+        CFBundleVersion: $(CURRENT_PROJECT_VERSION)
         LSMinimumSystemVersion: "15.0"
         LSApplicationCategoryType: public.app-category.utilities
         NSHumanReadableCopyright: "© 2026"

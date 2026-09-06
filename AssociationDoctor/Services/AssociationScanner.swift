@@ -66,4 +66,26 @@ struct AssociationScanner {
                 .localizedCaseInsensitiveCompare($1.localizedTypeName ?? $1.target.value) == .orderedAscending
         }
     }
+
+    /// Re-reads one already-scanned association from LaunchServices.
+    ///
+    /// Only the current default and the handler list can have changed since
+    /// the scan; the type's identity, label, category and curated flag came
+    /// from the target itself and are carried over rather than rebuilt —
+    /// which is what makes a post-repair refresh a couple of lookups
+    /// instead of a full sweep. Returns the input unchanged if the target
+    /// no longer resolves, so a refresh can never silently drop a row.
+    func refreshed(_ association: ScannedAssociation) -> ScannedAssociation {
+        guard let resolved = try? engine.resolve(association.target) else { return association }
+        return ScannedAssociation(
+            id: association.id,
+            target: association.target,
+            uti: association.uti,
+            localizedTypeName: association.localizedTypeName,
+            category: association.category,
+            currentApp: engine.currentDefault(for: resolved),
+            availableApps: (try? engine.handlers(for: association.target)) ?? [],
+            isCurated: association.isCurated
+        )
+    }
 }

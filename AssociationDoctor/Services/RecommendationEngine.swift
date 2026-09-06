@@ -214,11 +214,6 @@ struct RecommendationEngine {
     }
 
     static func expectedBundleID(for scanned: ScannedAssociation, baseline: Baseline?) -> String? {
-        guard let baseline else { return nil }
-        return baseline.associations.first { entry in
-            if let uti = scanned.uti, let entryUTI = entry.uti, uti == entryUTI { return true }
-            if case .ext(let ext) = scanned.target, entry.extensionName == ext { return true }
-            return false
-        }?.bundleID
+        baseline?.expectedBundleID(for: scanned)
     }
 }

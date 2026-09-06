@@ -41,6 +41,7 @@ struct ApplicationDetailView: View {
                         record: record,
                         isDefault: record.currentApp?.bundleID == app.bundleID,
                         isApplying: applyingRecordID == record.id,
+                        protection: appState.protection(for: record),
                         onMakeDefault: { makeDefault(record) }
                     )
                 }
@@ -66,6 +67,7 @@ private struct ApplicationCapabilityRow: View {
     let record: AssociationRecord
     let isDefault: Bool
     let isApplying: Bool
+    let protection: ProtectionReason?
     let onMakeDefault: () -> Void
 
     var body: some View {
@@ -81,6 +83,8 @@ private struct ApplicationCapabilityRow: View {
                 Label("Default", systemImage: "checkmark.circle.fill")
                     .font(.caption.weight(.medium))
                     .foregroundStyle(.green)
+            } else if let protection {
+                ProtectedBadge(reason: protection)
             } else {
                 Button("Make Default", action: onMakeDefault)
                     .disabled(isApplying)

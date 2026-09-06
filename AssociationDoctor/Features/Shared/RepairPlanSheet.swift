@@ -33,9 +33,19 @@ struct RepairPlanSheet: View {
                 }
             }
             .navigationTitle(title)
+            .interactiveDismissDisabled(runner.isRunning)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button(runner.hasRun ? "Done" : "Cancel") { dismiss() }
+                    // While a plan is applying, this is a Stop — not a Done.
+                    // Dismissing here used to hide the sheet while the run
+                    // kept going, so macOS carried on raising confirmation
+                    // dialogs for changes with no visible owner.
+                    if runner.isRunning {
+                        Button(runner.isCancelled ? "Stopping…" : "Stop") { runner.cancel() }
+                            .disabled(runner.isCancelled)
+                    } else {
+                        Button(runner.hasRun ? "Done" : "Cancel") { dismiss() }
+                    }
                 }
                 if !runner.hasRun {
                     ToolbarItem(placement: .confirmationAction) {
@@ -56,7 +66,8 @@ struct RepairPlanSheet: View {
 
     private var title: String {
         if !runner.hasRun { return "Review \(runner.plan.changes.count) Changes" }
-        return runner.isRunning ? "Applying…" : "Repair Complete"
+        if runner.isRunning { return runner.isCancelled ? "Stopping…" : "Applying…" }
+        return runner.isCancelled ? "Repair Stopped" : "Repair Complete"
     }
 
     private var summaryRows: some View {
@@ -66,7 +77,9 @@ struct RepairPlanSheet: View {
             if summary.alreadySet > 0 { summaryRow("Already Set", count: summary.alreadySet, color: .secondary) }
             if summary.declined > 0 { summaryRow("Declined / Unconfirmed", count: summary.declined, color: .orange) }
             if summary.failed > 0 { summaryRow("Failed", count: summary.failed, color: .red) }
+            if summary.protected > 0 { summaryRow("Protected", count: summary.protected, color: .secondary) }
             if summary.skipped > 0 { summaryRow("Skipped", count: summary.skipped, color: .secondary) }
+            if summary.notApplied > 0 { summaryRow("Not applied", count: summary.notApplied, color: .secondary) }
         }
     }
 

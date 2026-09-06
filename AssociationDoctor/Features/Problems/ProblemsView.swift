@@ -11,7 +11,11 @@ struct ProblemsView: View {
     @State private var isApplying = false
     @State private var reviewingPlan: RepairPlan?
 
+    /// The `.ignored` filter is the way back out of Ignore (§23): dismissed
+    /// findings are hidden from every other filter, so without a place that
+    /// lists them an ignore was a one-way door for the rest of the session.
     private var problems: [AssociationRecord] {
+        if filter == .ignored { return appState.displayRecords.filter { $0.status == .ignored } }
         let nonHealthy = appState.displayRecords.filter { $0.status != .healthy && $0.status != .ignored }
         guard let status = filter.status else { return nonHealthy }
         return nonHealthy.filter { $0.status == status }
@@ -21,7 +25,7 @@ struct ProblemsView: View {
     /// batch — "Fix All" only ever offers what's on screen under the
     /// active filter, never the full unfiltered problem set behind it.
     private var fixAllPlan: RepairPlan {
-        RepairPlan.build(from: problems, recommendation: appState.visibleRecommendation)
+        RepairPlan.build(from: problems, desiredApp: appState.desiredApp)
     }
 
     var body: some View {
@@ -43,7 +47,8 @@ struct ProblemsView: View {
                         isApplying: isApplying,
                         onFix: { applyFix(record, app: $0) },
                         onChooseAnother: { appPickerRecord = record },
-                        onIgnore: { appState.ignore(record) }
+                        onIgnore: { appState.ignore(record) },
+                        onUnignore: { appState.unignore(record) }
                     )
                     .listRowSeparator(.hidden)
                 }
@@ -65,7 +70,7 @@ struct ProblemsView: View {
             }
         }
         .sheet(item: $reviewingPlan) { plan in
-            RepairPlanSheet(plan: plan, apply: appState.applyRepairAction, onFinished: { Task { await appState.scan() } })
+            RepairPlanSheet(plan: plan, apply: appState.applyRepairAction, onFinished: { Task { await appState.refresh(targets: plan.changes.map(\.target)) } })
         }
         .alert(item: $outcomeMessage) { message in
             Alert(title: Text("Repair Result"), message: Text(message.text), dismissButton: .default(Text("OK")))
@@ -96,7 +101,7 @@ struct ProblemsView: View {
 }
 
 private enum ProblemFilter: String, CaseIterable, Identifiable {
-    case all, broken, suspicious, changed, noDefault
+    case all, broken, suspicious, changed, noDefault, ignored
 
     var id: String { rawValue }
 
@@ -107,6 +112,7 @@ private enum ProblemFilter: String, CaseIterable, Identifiable {
         case .suspicious: return "Suspicious"
         case .changed: return "Changed"
         case .noDefault: return "No Default"
+        case .ignored: return "Ignored"
         }
     }
 
@@ -117,6 +123,7 @@ private enum ProblemFilter: String, CaseIterable, Identifiable {
         case .suspicious: return .suspicious
         case .changed: return .changed
         case .noDefault: return .noDefault
+        case .ignored: return .ignored
         }
     }
 }
@@ -127,8 +134,11 @@ private struct ProblemCard: View {
     let onFix: (AppInfo) -> Void
     let onChooseAnother: () -> Void
     let onIgnore: () -> Void
+    let onUnignore: () -> Void
 
     @EnvironmentObject private var appState: AppState
+
+    private var protection: ProtectionReason? { appState.protection(for: record) }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
@@ -151,7 +161,9 @@ private struct ProblemCard: View {
             }
             .font(.subheadline)
 
-            if let recommendation = appState.visibleRecommendation(for: record) {
+            if let protection {
+                ProtectedNotice(reason: protection)
+            } else if let recommendation = appState.visibleRecommendation(for: record) {
                 VStack(alignment: .leading, spacing: 2) {
                     HStack(spacing: 4) {
                         Text("Recommended:").foregroundStyle(.secondary)
@@ -167,17 +179,23 @@ private struct ProblemCard: View {
             }
 
             HStack {
-                if let recommendation = appState.visibleRecommendation(for: record) {
+                if protection == nil, let recommendation = appState.visibleRecommendation(for: record) {
                     Button("Fix") { onFix(recommendation.suggestedApp) }
                         .buttonStyle(.borderedProminent)
                         .disabled(isApplying)
                 }
                 Button("Choose Another", action: onChooseAnother)
-                    .disabled(record.availableApps.isEmpty || isApplying)
+                    .disabled(protection != nil || record.availableApps.isEmpty || isApplying)
                 Spacer()
-                Button("Ignore", action: onIgnore)
-                    .buttonStyle(.plain)
-                    .foregroundStyle(.secondary)
+                if record.status == .ignored {
+                    Button("Stop Ignoring", action: onUnignore)
+                        .buttonStyle(.plain)
+                        .foregroundStyle(Color.accentColor)
+                } else {
+                    Button("Ignore", action: onIgnore)
+                        .buttonStyle(.plain)
+                        .foregroundStyle(.secondary)
+                }
             }
         }
         .padding()

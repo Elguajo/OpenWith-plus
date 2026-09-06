@@ -21,10 +21,30 @@ struct BaselineStoreTests {
         return (BaselineStore(directory: directory), directory)
     }
 
-    @Test("nothing saved yet loads as nil, not an error")
-    func loadWithNoFileIsNil() {
+    @Test("nothing saved yet loads as empty, not an error")
+    func loadWithNoFileIsEmpty() {
         let (store, _) = store()
-        #expect(store.load() == nil)
+        #expect(store.load() == .empty)
+    }
+
+    @Test("an unreadable baseline is reported and kept, never treated as absent")
+    func loadWithCorruptFileIsReported() throws {
+        let (store, directory) = store()
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        let fileURL = directory.appendingPathComponent("baseline.json")
+        try Data("{ this is not the baseline you are looking for".utf8).write(to: fileURL)
+
+        let result = store.load()
+
+        guard case .unreadable(let backupURL) = result else {
+            Issue.record("expected .unreadable, got \(result)")
+            return
+        }
+        // The bad file is preserved under a new name, so the next save
+        // (which writes baseline.json) cannot destroy it.
+        #expect(backupURL != nil)
+        #expect(FileManager.default.fileExists(atPath: backupURL!.path))
+        #expect(!FileManager.default.fileExists(atPath: fileURL.path))
     }
 
     @Test("a saved baseline round-trips through disk unchanged")
@@ -40,7 +60,7 @@ struct BaselineStoreTests {
         try store.save(baseline)
         let loaded = store.load()
 
-        #expect(loaded == baseline)
+        #expect(loaded == .loaded(baseline))
     }
 
     @Test("saving creates the Application Support subdirectory on demand")
@@ -65,7 +85,7 @@ struct BaselineStoreTests {
         ])
         try store.save(updated)
 
-        #expect(store.load() == updated)
+        #expect(store.load() == .loaded(updated))
     }
 }
 
@@ -104,13 +124,54 @@ struct BaselineCapturingTests {
         #expect(baseline.associations.isEmpty)
     }
 
-    @Test("a URL scheme target carries no extension, only the UTI/bundle")
-    func urlSchemeHasNoExtension() {
+    @Test("a URL scheme target is saved under its scheme, not as an anonymous row")
+    func urlSchemeIsSavedByScheme() {
         let records = [record(target: .urlScheme("mailto"), uti: nil, currentApp: Self.vscode)]
 
         let baseline = Baseline.capturing(name: "My Mac", from: records)
 
         #expect(baseline.associations.first?.extensionName == nil)
+        #expect(baseline.associations.first?.scheme == "mailto")
         #expect(baseline.associations.first?.bundleID == Self.vscode.bundleID)
+        // The point of storing it: Compare/Restore can find it again.
+        #expect(baseline.expectedBundleID(for: records[0]) == Self.vscode.bundleID)
+    }
+
+    @Test("a saved scheme is matched back by scheme, and never by a different one")
+    func schemeMatchingIsExact() {
+        let baseline = Baseline.capturing(
+            name: "My Mac",
+            from: [
+                record(target: .urlScheme("mailto"), uti: nil, currentApp: Self.vscode),
+                record(target: .urlScheme("ssh"), uti: nil, currentApp: Self.textEdit),
+            ])
+
+        #expect(
+            baseline.expectedBundleID(forUTI: nil, target: .urlScheme("ssh")) == Self.textEdit.bundleID)
+        #expect(baseline.expectedBundleID(forUTI: nil, target: .urlScheme("ftp")) == nil)
+    }
+
+    @Test("a record that identifies nothing is never saved")
+    func skipsUnidentifiableRecords() {
+        let records = [record(target: .file("/tmp/x"), uti: nil, currentApp: Self.vscode)]
+
+        #expect(Baseline.capturing(name: "My Mac", from: records).associations.isEmpty)
+    }
+
+    @Test("a baseline written before schemes existed still decodes")
+    func decodesLegacyEntryWithoutScheme() throws {
+        let json = """
+            {"associations":[{"bundleID":"com.microsoft.VSCode","extensionName":"md"}],\
+            "createdAt":1700000000000,"id":"\(UUID().uuidString)","name":"My Mac"}
+            """
+        let decoder = JSONDecoder()
+        decoder.dateDecodingStrategy = .custom { decoder in
+            Date(timeIntervalSince1970: Double(try decoder.singleValueContainer().decode(Int64.self)) / 1000)
+        }
+
+        let baseline = try decoder.decode(Baseline.self, from: Data(json.utf8))
+
+        #expect(baseline.associations.first?.scheme == nil)
+        #expect(baseline.expectedBundleID(forUTI: nil, target: .ext("md")) == Self.vscode.bundleID)
     }
 }

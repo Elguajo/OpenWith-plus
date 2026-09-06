@@ -50,6 +50,61 @@ struct RepairPlanRunnerTests {
         #expect(runner.hasRun == true)
     }
 
+    @Test("stopping a run applies nothing after the action in flight")
+    func cancelStopsTheRun() async {
+        let plan = RepairPlan(changes: [
+            action(target: .ext("zsh"), current: Self.xcode, desired: Self.code),
+            action(target: .ext("py"), current: nil, desired: Self.code),
+            action(target: .ext("rb"), current: nil, desired: Self.code),
+        ])
+        // Cancels from inside the first apply — the realistic case: the user
+        // hits Stop while macOS is showing the confirmation dialog.
+        var runner: RepairPlanRunner?
+        let recorder = RecordingApply(outcomes: [.applied(Self.code)])
+        runner = RepairPlanRunner(plan: plan) { app, target in
+            runner?.cancel()
+            return await recorder.apply(app, target)
+        }
+
+        await runner!.run()
+
+        #expect(recorder.calls.count == 1)
+        #expect(runner!.states == [.done(.applied(Self.code)), .pending, .pending])
+        #expect(runner!.isCancelled == true)
+        #expect(runner!.isRunning == false)
+        #expect(runner!.summary.applied == 1)
+        #expect(runner!.summary.notApplied == 2)
+    }
+
+    @Test("cancelling a run that never started changes nothing")
+    func cancelBeforeRunIsANoOp() async {
+        let plan = RepairPlan(changes: [action(target: .ext("zsh"), current: nil, desired: Self.code)])
+        let recorder = RecordingApply(outcomes: [.applied(Self.code)])
+        let runner = RepairPlanRunner(plan: plan, apply: recorder.apply)
+
+        runner.cancel()
+        await runner.run()
+
+        #expect(runner.isCancelled == false)
+        #expect(recorder.calls.count == 1)
+    }
+
+    @Test("a refused protected change is tallied on its own, never as applied or failed")
+    func protectedOutcomeIsItsOwnTally() async {
+        let plan = RepairPlan(changes: [
+            action(target: .ext("app"), current: nil, desired: Self.code),
+            action(target: .ext("py"), current: nil, desired: Self.code),
+        ])
+        let recorder = RecordingApply(outcomes: [.notPermitted(reason: .executable), .applied(Self.code)])
+        let runner = RepairPlanRunner(plan: plan, apply: recorder.apply)
+
+        await runner.run()
+
+        #expect(runner.summary.protected == 1)
+        #expect(runner.summary.applied == 1)
+        #expect(runner.summary.failed == 0)
+    }
+
     @Test("a skipped action is never applied and stays skipped after the run")
     func skippedActionIsNeverApplied() async {
         let plan = RepairPlan(changes: [
@@ -126,8 +181,8 @@ struct RepairPlanRunnerTests {
         #expect(summary.skipped == 1)
     }
 
-    @Test("RepairPlan.build only includes records with a visible recommendation")
-    func buildSkipsRecordsWithoutARecommendation() {
+    @Test("RepairPlan.build only includes records the caller has a desired app for")
+    func buildSkipsRecordsWithoutADesiredApp() {
         let withRecommendation = AssociationRecord(
             id: "1", target: .ext("zsh"), uti: "public.shell-script", localizedTypeName: "Shell Script",
             category: .code, currentApp: Self.xcode, availableApps: [Self.xcode, Self.code], status: .suspicious,
@@ -136,7 +191,9 @@ struct RepairPlanRunnerTests {
             id: "2", target: .ext("txt"), uti: "public.plain-text", localizedTypeName: "Plain Text", category: .document,
             currentApp: Self.textEdit, availableApps: [Self.textEdit], status: .healthy, recommendation: nil)
 
-        let plan = RepairPlan.build(from: [withRecommendation, withoutRecommendation]) { $0.recommendation }
+        let plan = RepairPlan.build(from: [withRecommendation, withoutRecommendation]) {
+            $0.recommendation?.suggestedApp
+        }
 
         #expect(plan.changes.count == 1)
         #expect(plan.changes[0].target == .ext("zsh"))

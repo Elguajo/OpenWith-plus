@@ -15,6 +15,15 @@ final class SettingsStore: ObservableObject {
     @Published var showAdvancedUTIIdentifiers: Bool {
         didSet { defaults.set(showAdvancedUTIIdentifiers, forKey: Keys.showAdvancedUTI) }
     }
+    /// Unlocks the associations macOS itself depends on — apps, installers,
+    /// disk images, OS components, Apple's internal URL schemes (see
+    /// `AssociationProtection`). Off by default and never flipped by the
+    /// app: a wrong handler here can leave a Mac unable to install
+    /// software or open System Settings, which is not something a
+    /// one-click Fix should be able to do behind the user's back.
+    @Published var allowProtectedAssociationChanges: Bool {
+        didSet { defaults.set(allowProtectedAssociationChanges, forKey: Keys.allowProtectedChanges) }
+    }
 
     private let defaults: UserDefaults
 
@@ -24,6 +33,7 @@ final class SettingsStore: ObservableObject {
         static let includeURLSchemes = "settings.includeURLSchemes"
         static let includeSystemFileTypes = "settings.includeSystemFileTypes"
         static let showAdvancedUTI = "settings.showAdvancedUTIIdentifiers"
+        static let allowProtectedChanges = "settings.allowProtectedAssociationChanges"
     }
 
     init(defaults: UserDefaults = .standard) {
@@ -33,5 +43,6 @@ final class SettingsStore: ObservableObject {
         includeURLSchemes = defaults.object(forKey: Keys.includeURLSchemes) as? Bool ?? true
         includeSystemFileTypes = defaults.object(forKey: Keys.includeSystemFileTypes) as? Bool ?? true
         showAdvancedUTIIdentifiers = defaults.bool(forKey: Keys.showAdvancedUTI)
+        allowProtectedAssociationChanges = defaults.bool(forKey: Keys.allowProtectedChanges)
     }
 }

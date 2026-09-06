@@ -15,6 +15,10 @@ struct AllAssociationsView: View {
     @State private var scope: Scope = .common
     @State private var appPickerRecord: AssociationRecord?
     @State private var outcomeMessage: RepairOutcomeMessage?
+    /// One change at a time: each one raises its own macOS confirmation
+    /// dialog, so a second click while the first is still in flight stacks
+    /// dialogs the user never asked for (§16).
+    @State private var isApplying = false
 
     private enum Scope: String, CaseIterable, Identifiable {
         case common, all
@@ -81,6 +85,7 @@ struct AllAssociationsView: View {
                         ForEach(group.records) { record in
                             AssociationRow(
                                 record: record, showAdvancedUTI: appState.settings.showAdvancedUTIIdentifiers,
+                                protection: appState.protection(for: record),
                                 onChange: { appPickerRecord = record })
                         }
                     }
@@ -94,8 +99,11 @@ struct AllAssociationsView: View {
     }
 
     private func applyChange(_ record: AssociationRecord, app: AppInfo) {
+        guard !isApplying else { return }
+        isApplying = true
         Task {
             let outcome = await appState.applyFix(record, app: app)
+            isApplying = false
             outcomeMessage = RepairOutcomeMessage(outcome)
         }
     }
@@ -104,6 +112,7 @@ struct AllAssociationsView: View {
 private struct AssociationRow: View {
     let record: AssociationRecord
     let showAdvancedUTI: Bool
+    let protection: ProtectionReason?
     let onChange: () -> Void
 
     var body: some View {
@@ -119,9 +128,15 @@ private struct AssociationRow: View {
             Text(record.currentApp?.name ?? "None")
                 .foregroundStyle(.secondary)
             StatusBadge(status: record.status)
-            Button("Change...", action: onChange)
-                .buttonStyle(.link)
-                .disabled(record.availableApps.isEmpty)
+            // The status stays visible either way — a protected association
+            // is still diagnosed, it just isn't the user's to rewrite.
+            if let protection {
+                ProtectedBadge(reason: protection)
+            } else {
+                Button("Change...", action: onChange)
+                    .buttonStyle(.link)
+                    .disabled(record.availableApps.isEmpty)
+            }
         }
         .padding(.vertical, 2)
     }

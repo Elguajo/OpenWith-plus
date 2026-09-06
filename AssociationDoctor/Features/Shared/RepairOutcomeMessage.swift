@@ -14,6 +14,9 @@ extension RepairOutcome {
             return
                 "macOS didn't confirm the change to \(desired.name) — you may have declined the system dialog, or it's still pending your answer."
         case .failed(let message): return "Couldn't change the default: \(message)"
+        case .notPermitted(let reason):
+            return
+                "This association is protected. \(reason.explanation) You can allow changes like this in Settings."
         }
     }
 
@@ -25,6 +28,7 @@ extension RepairOutcome {
         case .alreadySet: return "Already Set"
         case .notConfirmed: return "Declined"
         case .failed: return "Failed"
+        case .notPermitted: return "Protected"
         }
     }
 
@@ -34,6 +38,7 @@ extension RepairOutcome {
         case .alreadySet: return "checkmark.circle"
         case .notConfirmed: return "exclamationmark.circle.fill"
         case .failed: return "xmark.circle.fill"
+        case .notPermitted: return "lock.fill"
         }
     }
 
@@ -43,6 +48,7 @@ extension RepairOutcome {
         case .alreadySet: return .secondary
         case .notConfirmed: return .orange
         case .failed: return .red
+        case .notPermitted: return .secondary
         }
     }
 }

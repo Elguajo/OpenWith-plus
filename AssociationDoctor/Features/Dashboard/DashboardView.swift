@@ -8,8 +8,12 @@ struct DashboardView: View {
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 28) {
-                if appState.lastScanDate == nil && !appState.isScanning {
-                    emptyState
+                if appState.lastScanDate == nil {
+                    // Before the first scan there is no score to show — and
+                    // an empty `HealthScore` reads as a confident "100 %"
+                    // over "0 file types scanned", which is the one number
+                    // this screen must never make up.
+                    if appState.isScanning { scanningState } else { emptyState }
                 } else {
                     scoreSection
                     breakdownSection
@@ -38,7 +42,7 @@ struct DashboardView: View {
             }
         }
         .sheet(item: $reviewingPlan) { plan in
-            RepairPlanSheet(plan: plan, apply: appState.applyRepairAction, onFinished: { Task { await appState.scan() } })
+            RepairPlanSheet(plan: plan, apply: appState.applyRepairAction, onFinished: { Task { await appState.refresh(targets: plan.changes.map(\.target)) } })
         }
     }
 
@@ -55,7 +59,7 @@ struct DashboardView: View {
     /// just navigates — there's nothing yet worth reviewing in a sheet.
     @ViewBuilder
     private var reviewOrFixButton: some View {
-        let plan = RepairPlan.build(from: problemRecords, recommendation: appState.visibleRecommendation)
+        let plan = RepairPlan.build(from: problemRecords, desiredApp: appState.desiredApp)
         Button(plan.changes.isEmpty ? "Review Problems" : "Fix \(plan.changes.count) Issues") {
             if plan.changes.isEmpty {
                 appState.selectedSection = .problems
@@ -78,6 +82,18 @@ struct DashboardView: View {
             }
             .buttonStyle(.borderedProminent)
             .disabled(appState.isScanning)
+        }
+    }
+
+    private var scanningState: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Text("Scanning this Mac")
+                .font(.title2.weight(.semibold))
+            HStack(spacing: 8) {
+                ProgressView().controlSize(.small)
+                Text("Reading the file types and URL schemes your apps declare.")
+                    .foregroundStyle(.secondary)
+            }
         }
     }
 
