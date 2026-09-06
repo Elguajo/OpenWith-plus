@@ -144,6 +144,29 @@ struct RecommendationEngineTests {
         #expect(recommendation?.reasons.contains(.weakHandlerMatch) != true)
     }
 
+    @Test("a URL scheme handler is never penalized for category mismatch")
+    func urlSchemeSkipsCategoryMismatchPenalty() {
+        // Real browsers (Safari, Chrome) declare far more non-web document
+        // types (icons, images, plain text...) than actual web-page types,
+        // so their *dominant* declared category is often `.image`, not
+        // `.web` — but `FileCategoryClassifier` always reports `.web` for
+        // any `.urlScheme` target regardless of what the specific scheme
+        // is. Scoring that mismatch would wrongly penalize the correct,
+        // sole handler of `http`/`https` (and unfairly favor some other
+        // app that happens to declare only HTML types). VLC standing in
+        // for "an app whose declared types skew toward a different
+        // category" here, same as `categoryMismatchIsPenalized`.
+        let item = scanned(target: .urlScheme("http"), uti: nil, category: .web, availableApps: [Self.vlc])
+        let recommendationEngine = engine(typesByBundleID: [
+            Self.vlc.bundleID: AppDeclaredTypes(utis: ["public.jpeg"])
+        ])
+
+        let recommendation = recommendationEngine.recommend(for: [item], baseline: nil)[item.id]
+
+        #expect(recommendation?.reasons.contains(.categoryMismatch) != true)
+        #expect(recommendation?.reasons.contains(.categoryMatch) != true)
+    }
+
     @Test("a plain extension handler with no declarations is a weak match")
     func weakHandlerMatchForUndeclaredExtension() {
         let item = scanned(availableApps: [Self.vlc])

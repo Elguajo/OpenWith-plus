@@ -109,7 +109,16 @@ struct RecommendationEngine {
         var score = 0.0
         var reasons: [RecommendationReason] = []
 
-        if let dominantCategory {
+        // A URL scheme's `.category` is always `.web` in `FileCategoryClassifier`
+        // regardless of what the scheme actually is (`tel:`, `ssh:`, `vnc:`...) —
+        // there is no real "declared document category" to compare a scheme
+        // handler against, so this signal would otherwise penalize (or
+        // wrongly favor) apps based on unrelated file types they happen to
+        // open. Same rationale as `weakHandlerMatch` below being skipped for
+        // schemes.
+        if case .urlScheme = scanned.target {
+            // no-op
+        } else if let dominantCategory {
             if dominantCategory == scanned.category {
                 score += 30
                 reasons.append(.categoryMatch)
